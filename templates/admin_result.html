@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Optimizasyon Sonucu</title>
+
+    <link rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h2, h3 {
+            margin-top: 25px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        #map {
+            height: 520px;
+            margin-top: 20px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+
+<h2>🚛 Toplu Kargo Optimizasyonu</h2>
+
+<!-- ===================== -->
+<!-- 📊 TABLO -->
+<!-- ===================== -->
+<h3>📊 Araç Bazlı Kargo Dağılımı</h3>
+
+<table>
+    <tr>
+        <th>Araç ID</th>
+        <th>İlçe</th>
+        <th>Kargo (kg)</th>
+        <th>Araç Toplamı (kg)</th>
+        <th>Kiralık</th>
+    </tr>
+
+    {% for vehicle in result.vehicle_routes %}
+        {% set real_stations = vehicle.stations | selectattr('weight', 'defined') | list %}
+        {% set total = real_stations | sum(attribute='weight') %}
+        {% set row_count = real_stations | length %}
+
+        {% for s in real_stations %}
+        <tr>
+            {% if loop.first %}
+                <td rowspan="{{ row_count }}">{{ vehicle.vehicle_id }}</td>
+            {% endif %}
+
+            <td>{{ s.name }}</td>
+            <td>{{ s.weight }}</td>
+
+            {% if loop.first %}
+                <td rowspan="{{ row_count }}">{{ total }}</td>
+                <td rowspan="{{ row_count }}">
+                    {% if vehicle.vehicle_id == 99 %}
+                        Evet ({{ vehicle.rent_cost }} ₺)
+                    {% else %}
+                        Hayır
+                    {% endif %}
+                </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    {% endfor %}
+</table>
+
+<!-- ===================== -->
+<!-- 🗺️ HARİTA -->
+<!-- ===================== -->
+<h3>🗺️ Araç Bazlı Rotalar</h3>
+
+<div id="map"></div>
+
+<script id="routes-data" type="application/json">
+{{ result.vehicle_routes | tojson }}
+</script>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+const vehicleRoutes = JSON.parse(
+    document.getElementById("routes-data").textContent
+);
+
+const map = L.map("map").setView([40.766, 29.916], 10);
+
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap"
+}).addTo(map);
+
+const colors = ["red", "blue", "green", "purple", "orange"];
+let allBounds = [];
+
+vehicleRoutes.forEach((vehicle, vIndex) => {
+    if (!vehicle.stations || vehicle.stations.length === 0) return;
+
+    vehicle.stations.forEach(s => {
+        L.marker([s.lat, s.lon])
+            .addTo(map)
+            .bindPopup(`
+                <b>Araç ${vehicle.vehicle_id}</b><br>
+                ${s.name}<br>
+                ${s.weight !== undefined ? s.weight + " kg" : "Başlangıç"}
+            `);
+
+        allBounds.push([s.lat, s.lon]);
+    });
+
+    if (vehicle.stations.length < 2) return;
+
+    const coordString = vehicle.stations
+        .map(s => `${s.lon},${s.lat}`)
+        .join(";");
+
+    fetch(`https://router.project-osrm.org/route/v1/driving/${coordString}?overview=full&geometries=geojson`)
+        .then(res => res.json())
+        .then(data => {
+            if (!data.routes || data.routes.length === 0) return;
+
+            const coords = data.routes[0].geometry.coordinates
+                .map(c => [c[1], c[0]]);
+
+            L.polyline(coords, {
+                color: colors[vIndex % colors.length],
+                weight: 4
+            }).addTo(map);
+
+            coords.forEach(c => allBounds.push(c));
+        });
+});
+
+setTimeout(() => {
+    if (allBounds.length > 0) {
+        map.fitBounds(allBounds);
+    }
+}, 800);
+</script>
+
+</body>
+</html>

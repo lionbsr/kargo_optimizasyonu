@@ -1,16 +1,19 @@
-VEHICLES = [
-    {"capacity": 500, "rent_cost": 0},
-    {"capacity": 750, "rent_cost": 0},
-    {"capacity": 1000, "rent_cost": 0},
-]
+class Vehicle:
+    def __init__(self, vehicle_id, capacity, rent_cost=0):
+        self.id = vehicle_id
+        self.capacity = capacity
+        self.remaining_capacity = capacity
+        self.rent_cost = rent_cost
+        self.cargos = []
+        self.stations = set()
 
-RENTED_VEHICLE = {"capacity": 500, "rent_cost": 200}
+    def can_take(self, cargo):
+        return self.remaining_capacity >= cargo["weight"]
 
+    def add_cargo(self, cargo):
+        self.cargos.append(cargo)
+        self.stations.add(cargo["station"])
+        self.remaining_capacity -= cargo["weight"]
 
-def assign_vehicle(total_weight):
-    capacity_sum = sum(v["capacity"] for v in VEHICLES)
-
-    if total_weight <= capacity_sum:
-        return VEHICLES, 0
-    else:
-        return VEHICLES + [RENTED_VEHICLE], RENTED_VEHICLE["rent_cost"]
+    def total_weight(self):
+        return sum(c["weight"] for c in self.cargos)

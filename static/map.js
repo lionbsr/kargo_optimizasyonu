@@ -1,22 +1,20 @@
-// Harita oluştur
-var map = L.map('map').setView([40.766, 29.940], 10);
+document.addEventListener("DOMContentLoaded", function () {
 
-// OpenStreetMap katmanı
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap'
-}).addTo(map);
+    var map = L.map("map").setView([40.766, 29.916], 10);
 
-// Örnek istasyonlar (İlçe merkezleri)
-var stations = [
-    [40.766, 29.916], // İzmit
-    [40.750, 29.960], // Kartepe
-    [40.770, 29.510]  // Gebze
-];
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19
+    }).addTo(map);
 
-// Marker ekle
-stations.forEach(function(coord) {
-    L.marker(coord).addTo(map);
+    fetch("/stations")
+        .then(res => res.json())
+        .then(data => {
+            data.forEach(s => {
+                L.marker([s.lat, s.lon])
+                    .addTo(map)
+                    .bindPopup(s.name);
+            });
+
+            setTimeout(() => map.invalidateSize(), 200);
+        });
 });
-
-// Rota çiz (kuş uçuşu DEĞİL, yol benzeri polyline)
-L.polyline(stations, { color: 'blue' }).addTo(map);

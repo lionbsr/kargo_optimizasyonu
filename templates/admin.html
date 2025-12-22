@@ -3,20 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <title>Admin Paneli</title>
+
+    <!-- Leaflet CSS -->
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
     <link rel="stylesheet" href="/static/style.css">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h2 {
+            margin-bottom: 10px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        .box {
+            background: #fff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 8px rgba(0,0,0,0.1);
+            width: 420px;
+        }
+
+        #map {
+            height: 450px;
+            border-radius: 8px;
+            box-shadow: 0 0 8px rgba(0,0,0,0.1);
+        }
+
+        input, button {
+            width: 100%;
+            padding: 8px;
+            margin-top: 6px;
+        }
+
+        button {
+            cursor: pointer;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .row {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        a.back {
+            display: inline-block;
+            margin-top: 15px;
+            text-decoration: none;
+        }
+    </style>
 </head>
 <body>
-    <h1>Yönetici Paneli</h1>
 
-    <ul>
-        <li>İstasyon Ekle</li>
-        <li>Rota Planla</li>
-        <li>Maliyetleri Görüntüle</li>
-    </ul>
+<div class="container">
 
+    <h2>🛠 Yönetici (Admin) Paneli</h2>
+
+    <div class="row">
+
+        <!-- ========================= -->
+        <!-- İSTASYON EKLE -->
+        <!-- ========================= -->
+        <div class="box">
+            <h3>➕ Yeni İstasyon Ekle</h3>
+
+            <form method="post" action="/admin/add_station">
+                <input type="text" name="name" placeholder="İlçe Adı" required>
+                <input type="number" step="any" name="lat" placeholder="Latitude" required>
+                <input type="number" step="any" name="lon" placeholder="Longitude" required>
+                <button type="submit">İstasyon Ekle</button>
+            </form>
+        </div>
+
+        <!-- ========================= -->
+        <!-- OPTİMİZASYON -->
+        <!-- ========================= -->
+        <div class="box">
+            <h3>🚛 Rota & Kargo Optimizasyonu</h3>
+            <p>
+                Sistemde bulunan <b>tüm kargolar</b> optimize edilerek
+                araçlara atanır ve dağıtım rotası oluşturulur.
+            </p>
+
+            <a href="/admin/optimize">
+                <button>📊 Tüm Kargoları Optimize Et</button>
+            </a>
+        </div>
+
+    </div>
+
+    <!-- ========================= -->
+    <!-- HARİTA -->
+    <!-- ========================= -->
+    <h3>🗺️ Tanımlı İstasyonlar</h3>
     <div id="map"></div>
 
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="/static/map.js"></script>
+    <a href="/" class="back">⬅ Ana Sayfaya Dön</a>
+
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    const map = L.map("map").setView([40.766, 29.916], 10);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap"
+    }).addTo(map);
+
+    // Sadece istasyonları göster (YOL YOK)
+    fetch("/stations")
+        .then(res => res.json())
+        .then(data => {
+            data.forEach(st => {
+                L.marker([st.lat, st.lon])
+                    .addTo(map)
+                    .bindPopup(`<b>${st.name}</b>`);
+            });
+        });
+</script>
+
 </body>
 </html>

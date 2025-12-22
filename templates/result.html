@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Kargo Sonucu</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        #map { height: 400px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<h2>🚚 Kargo Sonuçları</h2>
+
+<p><b>İlçe:</b> {{ station }}</p>
+<p><b>Mesafe:</b> {{ distance }} km</p>
+<p><b>Araç:</b> {{ vehicle }}</p>
+<p><b>Maliyet:</b> {{ cost }} ₺</p>
+
+<div id="map"></div>
+
+<script id="route-data" type="application/json">
+{
+    "start_lat": {{ start_lat }},
+    "start_lon": {{ start_lon }},
+    "dest_lat": {{ dest_lat }},
+    "dest_lon": {{ dest_lon }}
+}
+</script>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+const data = JSON.parse(
+    document.getElementById("route-data").textContent
+);
+
+const map = L.map("map").setView(
+    [data.start_lat, data.start_lon], 10
+);
+
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+
+const line = L.polyline([
+    [data.start_lat, data.start_lon],
+    [data.dest_lat, data.dest_lon]
+]).addTo(map);
+
+map.fitBounds(line.getBounds());
+</script>
+
+</body>
+</html>

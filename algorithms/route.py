@@ -1,7 +1,19 @@
 def create_route(stations):
     """
-    stations: [(ilce_adi, mesafe_km), ...]
-    Basit sezgisel: mesafeye göre sırala
+    stations: [(district_name, distance_km), ...]
+
+    Kullanılan yöntem:
+    Greedy (Açgözlü) Yaklaşım
+
+    Mantık:
+    - En yakın noktadan başlanır
+    - Mesafeye göre sıralama yapılır
     """
-    sorted_route = sorted(stations, key=lambda x: x[1])
-    return sorted_route
+
+    if not stations:
+        return []
+
+    # Mesafeye göre artan sırala
+    route = sorted(stations, key=lambda x: x[1])
+
+    return route
