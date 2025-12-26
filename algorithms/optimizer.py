@@ -46,7 +46,7 @@ def optimize_all_cargos():
             SUM(cargos.weight) AS total_weight
         FROM cargos
         JOIN stations ON cargos.station_id = stations.id
-        WHERE cargos.date = DATE('now', '+1 day')
+        WHERE cargos.date = DATE('now')
         GROUP BY stations.id
     """).fetchall()
 
@@ -118,7 +118,7 @@ def optimize_all_cargos():
                     UPDATE cargos
                     SET assigned_vehicle_id = ?
                     WHERE station_id = ?
-                    AND date = DATE('now', '+1 day')
+                    AND date = DATE('now')
                 """, (vehicle.id, station["station_id"]))
                 break
 
@@ -130,7 +130,7 @@ def optimize_all_cargos():
                 UPDATE cargos
                 SET assigned_vehicle_id = ?
                 WHERE station_id = ?
-                AND date = DATE('now', '+1 day')
+                AND date = DATE('now')
             """, (rental_vehicle.id, station["station_id"]))
 
     if rental_vehicle.stations:

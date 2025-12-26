@@ -42,7 +42,7 @@ def user_panel():
 @app.route("/add_cargo", methods=["POST"])
 def add_cargo():
 
-    cargos = request.get_json()  # JSON alıyoruz
+    cargos = request.get_json()
 
     if not cargos:
         return jsonify({"error": "Kargo verisi gelmedi"}), 400
@@ -54,7 +54,10 @@ def add_cargo():
         weight = float(cargo["weight"])
 
         conn.execute(
-            "INSERT INTO cargos (station_id, weight) VALUES (?, ?)",
+            """
+            INSERT INTO cargos (station_id, weight, date)
+            VALUES (?, ?, DATE('now'))
+            """,
             (station_id, weight)
         )
 
@@ -175,6 +178,52 @@ def get_stations():
         for row in rows
     ])
 
+@app.route("/my_cargo/<int:cargo_id>")
+def my_cargo(cargo_id):
+    conn = sqlite3.connect("database.db")
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+
+    cargo = cur.execute("""
+        SELECT
+            cargos.id,
+            cargos.weight,
+            cargos.assigned_vehicle_id,
+            stations.name AS station_name,
+            stations.lat,
+            stations.lon
+        FROM cargos
+        JOIN stations ON cargos.station_id = stations.id
+        WHERE cargos.id = ?
+    """, (cargo_id,)).fetchone()
+
+    conn.close()
+
+    if not cargo:
+        return "Kargo bulunamadı"
+
+    return render_template(
+        "user_cargo.html",
+        cargo=cargo
+    )
+@app.route("/user/cargos")
+def user_cargos():
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT
+            cargos.id,
+            cargos.weight,
+            cargos.assigned_vehicle_id,
+            stations.name AS station_name,
+            stations.lat,
+            stations.lon
+        FROM cargos
+        JOIN stations ON cargos.station_id = stations.id
+        ORDER BY cargos.id DESC
+    """).fetchall()
+    conn.close()
+
+    return render_template("user_cargo.html", cargos=rows)
 
 # =====================================================
 # UYGULAMAYI BAŞLAT

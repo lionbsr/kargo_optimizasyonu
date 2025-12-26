@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Kargolarım</title>
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h2 {
+            margin-bottom: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        th {
+            background: #f2f2f2;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 13px;
+            display: inline-block;
+        }
+
+        .green { background: #28a745; }
+        .red { background: #dc3545; }
+
+        #map {
+            height: 420px;
+            margin-top: 20px;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+
+<h2>📦 Kargolarım</h2>
+
+<table>
+    <tr>
+        <th>Kargo ID</th>
+        <th>İlçe</th>
+        <th>Ağırlık (kg)</th>
+        <th>Araç Durumu</th>
+    </tr>
+
+    {% for c in cargos %}
+    <tr>
+        <td>{{ c.id }}</td>
+        <td>{{ c.station_name }}</td>
+        <td>{{ c.weight }}</td>
+        <td>
+            {% if c.assigned_vehicle_id %}
+                <span class="badge green">
+                    🚛 Araç {{ c.assigned_vehicle_id }}
+                </span>
+            {% else %}
+                <span class="badge red">
+                    ⏳ Henüz atanmadı
+                </span>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h3>🗺️ Kargo Dağılım Haritası</h3>
+<div id="map"></div>
+
+<!-- KARGO VERİSİ -->
+<script id="cargo-data" type="application/json">
+{{ cargos | tojson }}
+</script>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+const cargos = JSON.parse(
+    document.getElementById("cargo-data").textContent
+);
+
+const map = L.map("map").setView([40.766, 29.916], 10);
+
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution: "© OpenStreetMap"
+}).addTo(map);
+
+let bounds = [];
+
+cargos.forEach(c => {
+    if (!c.lat || !c.lon) return;
+
+    const marker = L.marker([c.lat, c.lon])
+        .addTo(map)
+        .bindPopup(`
+            <b>${c.station_name}</b><br>
+            ${c.weight} kg<br>
+            Araç: ${c.assigned_vehicle_id ?? "Atanmadı"}
+        `);
+
+    bounds.push([c.lat, c.lon]);
+});
+
+if (bounds.length > 0) {
+    map.fitBounds(bounds);
+}
+</script>
+
+</body>
+</html>
